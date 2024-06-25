@@ -2,20 +2,12 @@
 <html lang="en">
   <head>
     <%- include ('./partials/head.ejs') %>
-    <title>Signup</title>
+    <title>Signin</title>
   </head>
   <body>
     <div class="container mt-4">
-      <form action="/user/signup" method="post">
+      <form action="/user/signin" method="post">
         <div class="mb-3">
-          <label for="fullName" class="form-label">Full name</label>
-          <input
-            type="text"
-            name="fullname"
-            class="form-control"
-            id="fullName"
-            aria-describedby="fullNameHelp"
-          />
           <div id="fullNameHelp" class="form-text">
             We'll never share your email with anyone else.
           </div>

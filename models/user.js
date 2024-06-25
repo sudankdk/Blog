@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { createHmac, randomBytes } = require("node:crypto");
+const { createHmac, randomBytes } = require("crypto");
 
 const userSchema = new mongoose.Schema(
   {
@@ -7,14 +7,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    Email: {
+    email: {
       type: String,
       required: true,
       unique: true,
     },
-    slat: {
+    salt: {
       type: String,
-      required: true,
     },
     password: {
       type: String,
@@ -33,21 +32,40 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", function (next) {
+userSchema.pre("save", async function (next) {
   const user = this;
 
-  if (!user.isModified("password")) return;
-  const salt = randomBytes(16).toString();
+  if (!user.isModified("password")) return next();
+
+  const salt = randomBytes(16).toString("hex");
 
   const hashPassword = createHmac("sha256", salt)
     .update(user.password)
     .digest("hex");
 
-  this.salt = salt;
-  this.password = hashPassword;
+  user.salt = salt;
+  user.password = hashPassword;
 
   next();
 });
 
-const User = new mongoose.model("User", userSchema);
+userSchema.static("matchPassword", async function (email, password) {
+  try {
+    const user = await this.findOne({ email });
+    if (!user) return false;
+
+    const salt = user.salt;
+    const hashPassword = user.password;
+    const userProvidedHash = createHmac("sha256", salt)
+      .update(password)
+      .digest("hex");
+
+    return hashPassword === userProvidedHash ? user : false;
+  } catch (error) {
+    console.error("Error matching password:", error);
+    return false;
+  }
+});
+
+const User = mongoose.model("User", userSchema);
 module.exports = User;
